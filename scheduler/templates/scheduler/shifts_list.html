@@ -1,0 +1,34 @@
+﻿{% extends "scheduler/base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Смены</h3>
+  <div>
+    <a href="{% url 'scheduler:shift_add' %}" class="btn btn-primary">+ Смена</a>
+    <a href="{% url 'scheduler:shifts_bulk_add' %}" class="btn btn-outline-primary">Массово</a>
+  </div>
+</div>
+<form method="get" class="row g-2 mb-3">
+  <div class="col-md-3"><input type="date" name="start" value="{{ start }}" class="form-control"></div>
+  <div class="col-md-3"><input type="date" name="end" value="{{ end }}" class="form-control"></div>
+  <div class="col-md-2"><button class="btn btn-outline-secondary w-100">Фильтр</button></div>
+</form>
+<table class="table table-striped">
+  <thead><tr><th>Дата</th><th>Тип</th><th>Время</th><th>Нужно</th><th>Навык</th><th>Локация</th><th></th></tr></thead>
+  <tbody>
+    {% for s in page_obj %}
+    <tr>
+      <td>{{ s.date }}</td><td>{{ s.get_shift_type_display }}</td>
+      <td>{{ s.start_time }}–{{ s.end_time }}</td>
+      <td>{{ s.required_employees }}</td>
+      <td>{{ s.required_skill|default:"—" }}</td>
+      <td>{{ s.location|default:"—" }}</td>
+      <td class="text-end">
+        <a href="{% url 'scheduler:shift_edit' s.pk %}" class="btn btn-sm btn-outline-primary">Изм.</a>
+        <a href="{% url 'scheduler:shift_delete' s.pk %}" class="btn btn-sm btn-outline-danger">Уд.</a>
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="7" class="text-muted">Нет смен</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% include "scheduler/_pagination.html" %}
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "scheduler/base.html" %}
+{% block title %}Аналитика{% endblock %}
+{% block content %}
+<h3 class="mb-3">Аналитика расписания</h3>
+
+<form method="get" class="row g-2 mb-4" style="max-width:640px">
+  <div class="col-md-4">
+    <label class="form-label small mb-0">С</label>
+    <input type="date" name="start" value="{{ start|date:'Y-m-d' }}" class="form-control">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label small mb-0">По</label>
+    <input type="date" name="end" value="{{ end|date:'Y-m-d' }}" class="form-control">
+  </div>
+  <div class="col-md-4 d-flex align-items-end">
+    <button class="btn btn-outline-secondary w-100">Применить</button>
+  </div>
+</form>
+
+<!-- Статистика -->
+<h5>Статистика</h5>
+<div class="row g-2 mb-4">
+  <div class="col-md-3"><div class="card"><div class="card-body py-2">
+    <div class="small text-muted">Смен / покрыто</div>
+    <div class="h4 mb-0">{{ report.stats.covered_shifts }} / {{ report.stats.total_shifts }}</div>
+    <div class="small">{{ report.stats.coverage_pct }}%</div>
+  </div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body py-2">
+    <div class="small text-muted">Часов назначено / доступно</div>
+    <div class="h4 mb-0">{{ report.stats.assigned_hours }} / {{ report.stats.capacity_hours }}</div>
+    <div class="small">Использование: {{ report.stats.utilization_pct }}%</div>
+  </div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body py-2">
+    <div class="small text-muted">Активных сотрудников</div>
+    <div class="h4 mb-0">{{ report.stats.active_employees }} / {{ report.stats.total_employees }}</div>
+    <div class="small">Средняя нагрузка: {{ report.stats.avg_hours_per_employee }} ч</div>
+  </div></div></div>
+  <div class="col-md-3"><div class="card {% if report.stats.overtime_hours %}text-bg-warning{% endif %}">
+    <div class="card-body py-2">
+    <div class="small">Сверхурочные</div>
+    <div class="h4 mb-0">{{ report.stats.overtime_hours }} ч</div>
+    <div class="small">к оплате с коэфф. ТК</div>
+  </div></div></div>
+</div>
+
+<!-- Предупреждения -->
+<div class="row">
+  <div class="col-md-7">
+    <h5>⚠ Предупреждения и нарушения</h5>
+    {% for w in report.warnings %}
+      <div class="alert alert-{% if w.severity == 'critical' %}danger{% elif w.severity == 'warning' %}warning{% else %}info{% endif %} py-2">
+        <strong>
+          {% if w.severity == 'critical' %}🔴{% elif w.severity == 'warning' %}🟠{% else %}🟡{% endif %}
+          {{ w.title }}
+        </strong>
+        <div class="small mt-1">{{ w.message }}</div>
+      </div>
+    {% empty %}
+      <div class="alert alert-success py-2">
+        ✓ Нарушений и отклонений не обнаружено
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Рекомендации -->
+  <div class="col-md-5">
+    <h5>💡 Рекомендации</h5>
+    {% for r in report.recommendations %}
+      <div class="card mb-2 border-{% if r.priority == 1 %}danger{% elif r.priority == 2 %}warning{% else %}secondary{% endif %}">
+        <div class="card-body py-2">
+          <strong>{{ r.title }}</strong>
+          <div class="small mt-1">{{ r.message }}</div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="text-muted">Система не обнаружила проблем, требующих вмешательства.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends "scheduler/base.html" %}
+{% block title %}Главная{% endblock %}
+{% block content %}
+<h3 class="mb-4">Главная</h3>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card text-bg-primary"><div class="card-body">
+      <div class="small">Всего сотрудников</div>
+      <div class="display-6">{{ total_employees }}</div>
+    </div></div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-bg-info"><div class="card-body">
+      <div class="small">Смен на этой неделе</div>
+      <div class="display-6">{{ week_shifts_count }}</div>
+    </div></div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-bg-success"><div class="card-body">
+      <div class="small">Покрытие текущей недели</div>
+      <div class="display-6">{{ coverage_pct }}%</div>
+    </div></div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-bg-warning"><div class="card-body">
+      <div class="small">Переработка за месяц</div>
+      <div class="display-6">{{ total_overtime }} ч</div>
+    </div></div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-7">
+    <div class="card"><div class="card-body">
+      <h5>Часы по сотрудникам (текущий месяц)</h5>
+      <canvas id="hoursChart" height="160"></canvas>
+    </div></div>
+  </div>
+  <div class="col-md-5">
+    <div class="card"><div class="card-body">
+      <h5>Ближайшие непокрытые смены</h5>
+      {% if uncovered %}
+        {% for u in uncovered %}
+          <div class="alert alert-danger py-2 mb-2">
+            <strong>{{ u.shift.date }}</strong> — {{ u.shift.get_shift_type_display }}
+            ({{ u.assigned }}/{{ u.needed }})
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="text-success">Все ближайшие смены покрыты ✓</div>
+      {% endif %}
+    </div></div>
+  </div>
+</div>
+
+{% if top_warnings or top_recommendations %}
+<div class="row g-3 mb-4">
+  {% if top_warnings %}
+  <div class="col-md-7">
+    <div class="card border-warning"><div class="card-body">
+      <h6>⚠ Требует внимания</h6>
+      {% for w in top_warnings %}
+        <div class="small mb-1">
+          {% if w.severity == 'critical' %}🔴{% elif w.severity == 'warning' %}🟠{% else %}🟡{% endif %}
+          <strong>{{ w.title }}</strong>
+        </div>
+      {% endfor %}
+      <a href="{% url 'scheduler:analytics' %}" class="small">Все предупреждения →</a>
+    </div></div>
+  </div>
+  {% endif %}
+  {% if top_recommendations %}
+  <div class="col-md-5">
+    <div class="card border-info"><div class="card-body">
+      <h6>💡 Рекомендации</h6>
+      {% for r in top_recommendations %}
+        <div class="small mb-1"><strong>{{ r.title }}</strong></div>
+      {% endfor %}
+      <a href="{% url 'scheduler:analytics' %}" class="small">Подробнее →</a>
+    </div></div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{{ chart_data|json_script:"chart-data" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  const data = JSON.parse(document.getElementById("chart-data").textContent);
+  new Chart(document.getElementById("hoursChart"), {
+    type: "bar",
+    data: {
+      labels: data.labels,
+      datasets: [{ label: "Часы", data: data.hours, backgroundColor: "#0d6efd" }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+</script>
+{% endblock %}

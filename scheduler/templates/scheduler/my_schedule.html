@@ -1,0 +1,52 @@
+﻿{% extends "scheduler/base.html" %}
+{% block title %}Моё расписание{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Моё расписание</h3>
+  <a href="{% url 'scheduler:timeoff_request' %}" class="btn btn-outline-primary">Запросить отгул</a>
+</div>
+
+<div class="mb-3">
+  <span class="badge" style="background:#0d6efd">☀ Дневная</span>
+  <span class="badge" style="background:#fd7e14">🌇 Вечерняя</span>
+  <span class="badge" style="background:#6f42c1">🌙 Ночная</span>
+</div>
+
+<div id="calendar"></div>
+
+<style>
+  .fc-event { font-size: 0.78rem; border-radius: 3px; padding: 1px 4px; }
+  .fc-daygrid-event { margin: 1px 2px; }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const calendar = new FullCalendar.Calendar(document.getElementById("calendar"), {
+    initialView: "dayGridWeek",
+    locale: "ru",
+    firstDay: 1,
+    headerToolbar: {
+      left: "prev,next today",
+      center: "title",
+      right: "dayGridWeek,dayGridMonth"
+    },
+    buttonText: { today: "сегодня", month: "месяц", week: "неделя" },
+    height: "auto",
+    dayMaxEvents: false,
+    eventDisplay: "block",
+    events: function(info, success, failure) {
+      fetch(`{% url 'scheduler:schedule_events_json' %}?start=${info.startStr}&end=${info.endStr}&mine=1`)
+        .then(r => r.json())
+        .then(success)
+        .catch(failure);
+    },
+    eventDidMount: function(info) {
+      info.el.title = info.event.title + "\n" +
+        info.event.start.toLocaleTimeString("ru", {hour:"2-digit", minute:"2-digit"}) + " – " +
+        info.event.end.toLocaleTimeString("ru", {hour:"2-digit", minute:"2-digit"});
+    }
+  });
+  calendar.render();
+});
+</script>
+{% endblock %}

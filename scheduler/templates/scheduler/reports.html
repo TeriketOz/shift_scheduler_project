@@ -1,0 +1,59 @@
+﻿{% extends "scheduler/base.html" %}
+{% block title %}Отчёты{% endblock %}
+{% block content %}
+<h3 class="mb-3">Отчёты</h3>
+
+<form method="get" class="row g-2 mb-4" style="max-width:720px">
+  <div class="col-md-4">
+    <label class="form-label small mb-0">С</label>
+    <input type="date" name="start" value="{{ start|date:'Y-m-d' }}" class="form-control">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label small mb-0">По</label>
+    <input type="date" name="end" value="{{ end|date:'Y-m-d' }}" class="form-control">
+  </div>
+  <div class="col-md-4 d-flex align-items-end gap-2">
+    <button class="btn btn-outline-secondary flex-grow-1">Применить</button>
+    <a href="{% url 'scheduler:reports_export_csv' %}?start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}"
+       class="btn btn-success">⬇ CSV</a>
+  </div>
+</form>
+
+<div class="card mb-4"><div class="card-body">
+  <h5>Часы по сотрудникам</h5>
+  <canvas id="hoursChart" height="120"></canvas>
+</div></div>
+
+<table class="table table-striped">
+  <thead><tr>
+    <th>ФИО</th><th class="text-end">Часов</th>
+    <th class="text-end">Переработка</th>
+    <th class="text-end">Ночных</th>
+    <th class="text-end">Отгулов</th>
+  </tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr>
+      <td>{{ r.name }}</td>
+      <td class="text-end">{{ r.hours }}</td>
+      <td class="text-end {% if r.overtime %}text-danger fw-bold{% endif %}">{{ r.overtime }}</td>
+      <td class="text-end">{{ r.nights }}</td>
+      <td class="text-end">{{ r.timeoffs }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="5" class="text-muted">Нет данных</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+{{ chart_data|json_script:"chart-data" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  const d = JSON.parse(document.getElementById("chart-data").textContent);
+  new Chart(document.getElementById("hoursChart"), {
+    type: "bar",
+    data: { labels: d.labels, datasets: [{ label: "Часы", data: d.hours, backgroundColor: "#198754" }] },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,36 @@
+﻿{% extends "scheduler/base.html" %}
+{% block title %}Сотрудники{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Сотрудники</h3>
+  <a href="{% url 'scheduler:employee_add' %}" class="btn btn-primary">+ Добавить</a>
+</div>
+<form method="get" class="row g-2 mb-3">
+  <div class="col-md-5"><input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Поиск по ФИО"></div>
+  <div class="col-md-4">
+    <select name="skill" class="form-select">
+      <option value="">— все навыки —</option>
+      {% for s in skills %}<option value="{{ s.id }}" {% if skill_id|add:0 == s.id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3"><button class="btn btn-outline-secondary w-100">Фильтр</button></div>
+</form>
+<table class="table table-striped">
+  <thead><tr><th>ФИО</th><th>Должность</th><th>Разряд</th><th>Навыки</th><th></th></tr></thead>
+  <tbody>
+    {% for e in page_obj %}
+    <tr>
+      <td>{{ e.user.last_name }} {{ e.user.first_name }}</td>
+      <td>{{ e.position }}</td>
+      <td>{{ e.rank }}</td>
+      <td>{% for s in e.skills.all %}<span class="badge bg-secondary">{{ s.name }}</span> {% endfor %}</td>
+      <td class="text-end">
+        <a href="{% url 'scheduler:employee_edit' e.pk %}" class="btn btn-sm btn-outline-primary">Изм.</a>
+        <a href="{% url 'scheduler:employee_delete' e.pk %}" class="btn btn-sm btn-outline-danger">Уд.</a>
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="5" class="text-muted">Нет данных</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% include "scheduler/_pagination.html" %}
+{% endblock %}

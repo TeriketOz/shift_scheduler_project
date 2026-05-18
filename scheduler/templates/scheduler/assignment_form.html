@@ -1,0 +1,24 @@
+﻿{% extends "scheduler/base.html" %}
+{% block content %}
+<h3>{{ title }}</h3>
+{% if form.errors %}
+  <div class="alert alert-danger">
+    {% for field, errs in form.errors.items %}
+      {% for e in errs %}<div>{{ e }}</div>{% endfor %}
+    {% endfor %}
+  </div>
+{% endif %}
+<form method="post" class="row g-3" style="max-width:640px">
+  {% csrf_token %}
+  {% for field in form %}
+    <div class="col-md-6">
+      <label class="form-label">{{ field.label }}</label>
+      {{ field }}
+    </div>
+  {% endfor %}
+  <div class="col-12">
+    <button class="btn btn-primary">Сохранить</button>
+    <a href="{% url 'scheduler:assignments_list' %}" class="btn btn-link">Отмена</a>
+  </div>
+</form>
+{% endblock %}

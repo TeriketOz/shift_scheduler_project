@@ -1,0 +1,93 @@
+﻿{% extends "scheduler/base.html" %}
+{% block title %}Расписание{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Расписание</h3>
+</div>
+
+<form method="post" action="{% url 'scheduler:run_optimizer' %}" class="row g-2 mb-4" style="max-width:640px">
+  {% csrf_token %}
+  <div class="col-md-4">
+    <label class="form-label small mb-0">Начало</label>
+    <input type="date" name="start" class="form-control" required>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label small mb-0">Конец</label>
+    <input type="date" name="end" class="form-control" required>
+  </div>
+  <div class="col-md-4 d-flex align-items-end">
+    <button class="btn btn-success w-100">🚀 Оптимизировать</button>
+  </div>
+</form>
+
+<div id="opt-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0;
+     background:rgba(0,0,0,0.55); z-index:9999; justify-content:center; align-items:center;">
+  <div class="card" style="max-width:420px">
+    <div class="card-body text-center py-4">
+      <div class="spinner-border text-success mb-3" style="width:3rem; height:3rem"></div>
+      <h5>Построение расписания</h5>
+      <p class="small text-muted mb-2">
+        Работает алгоритм CP-SAT: подбирает оптимальное назначение<br>
+        с учётом всех ограничений (ТК РФ, квалификации, предпочтения).
+      </p>
+      <p class="small text-muted mb-0">Обычно занимает 2–30 секунд.</p>
+      <div class="progress mt-3" style="height:4px">
+        <div class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+             style="width:100%"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelector("form[action$='optimize/']").addEventListener("submit", () => {
+    document.getElementById("opt-overlay").style.display = "flex";
+  });
+</script>
+
+<div class="mb-3">
+  <span class="badge" style="background:#0d6efd">☀ Дневная</span>
+  <span class="badge" style="background:#fd7e14">🌇 Вечерняя</span>
+  <span class="badge" style="background:#6f42c1">🌙 Ночная</span>
+</div>
+
+<div id="calendar"></div>
+
+<style>
+  .fc-event { font-size: 0.78rem; border-radius: 3px; padding: 1px 4px; cursor: pointer; }
+  .fc-timegrid-slot { height: 28px; }
+  .fc .fc-col-header-cell-cushion { font-size: 0.85rem; }
+  .fc-daygrid-event { margin: 1px 2px; }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const calendar = new FullCalendar.Calendar(document.getElementById("calendar"), {
+    initialView: "dayGridWeek",
+    locale: "ru",
+    firstDay: 1,
+    headerToolbar: {
+      left: "prev,next today",
+      center: "title",
+      right: "dayGridWeek,dayGridMonth"
+    },
+    buttonText: { today: "сегодня", month: "месяц", dayGridWeek: "неделя" },
+    height: "auto",
+    dayMaxEvents: false,
+    eventDisplay: "block",
+    events: function(info, success, failure) {
+      fetch(`{% url 'scheduler:schedule_events_json' %}?start=${info.startStr}&end=${info.endStr}`)
+        .then(r => r.json())
+        .then(success)
+        .catch(failure);
+    },
+    eventDidMount: function(info) {
+      info.el.title = info.event.title + "\n" +
+        info.event.start.toLocaleTimeString("ru", {hour:"2-digit", minute:"2-digit"}) + " – " +
+        info.event.end.toLocaleTimeString("ru", {hour:"2-digit", minute:"2-digit"});
+    }
+  });
+  calendar.render();
+});
+</script>
+{% endblock %}

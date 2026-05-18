@@ -1,0 +1,40 @@
+{% extends "scheduler/base.html" %}
+{% block title %}Назначения{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Назначения на смены</h3>
+  <a href="{% url 'scheduler:assignment_add' %}" class="btn btn-primary">+ Назначить</a>
+</div>
+<form method="get" class="row g-2 mb-3">
+  <div class="col-md-4">
+    <select name="shift" class="form-select">
+      <option value="">— все смены —</option>
+      {% for s in shifts %}<option value="{{ s.id }}" {% if request.GET.shift == s.id|stringformat:"d" %}selected{% endif %}>{{ s }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4">
+    <select name="employee" class="form-select">
+      <option value="">— все сотрудники —</option>
+      {% for e in employees %}<option value="{{ e.id }}" {% if request.GET.employee == e.id|stringformat:"d" %}selected{% endif %}>{{ e }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2"><button class="btn btn-outline-secondary w-100">Фильтр</button></div>
+</form>
+<table class="table table-striped">
+  <thead><tr><th>Дата</th><th>Смена</th><th>Сотрудник</th><th>Статус</th><th></th></tr></thead>
+  <tbody>
+    {% for a in page_obj %}
+    <tr>
+      <td>{{ a.shift.date }}</td>
+      <td>{{ a.shift.get_shift_type_display }} {{ a.shift.start_time }}–{{ a.shift.end_time }}</td>
+      <td>{{ a.employee.user.last_name }} {{ a.employee.user.first_name }}</td>
+      <td><span class="badge bg-{% if a.status == 'CONFIRMED' %}success{% elif a.status == 'MISSED' %}danger{% elif a.status == 'COMPLETED' %}secondary{% else %}primary{% endif %}">{{ a.get_status_display }}</span></td>
+      <td class="text-end">
+        <a href="{% url 'scheduler:assignment_delete' a.pk %}" class="btn btn-sm btn-outline-danger">Уд.</a>
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="5" class="text-muted">Нет назначений</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% include "scheduler/_pagination.html" %}
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "scheduler/base.html" %}
+{% block content %}
+<h3>Удалить смену?</h3>
+<p>{{ object }}</p>
+<form method="post">
+  {% csrf_token %}
+  <button class="btn btn-danger">Удалить</button>
+  <a href="{% url 'scheduler:shifts_list' %}" class="btn btn-link">Отмена</a>
+</form>
+{% endblock %}

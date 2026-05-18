@@ -1,0 +1,29 @@
+﻿{% extends "scheduler/base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Отгулы</h3>
+  <a href="{% url 'scheduler:timeoff_request' %}" class="btn btn-primary">+ Запрос</a>
+</div>
+<table class="table table-striped">
+  <thead><tr>{% if is_staff %}<th>Сотрудник</th>{% endif %}<th>С</th><th>По</th><th>Причина</th><th>Статус</th>{% if is_staff %}<th></th>{% endif %}</tr></thead>
+  <tbody>
+    {% for t in page_obj %}
+    <tr>
+      {% if is_staff %}<td>{{ t.employee }}</td>{% endif %}
+      <td>{{ t.start_date }}</td><td>{{ t.end_date }}</td>
+      <td>{{ t.reason }}</td>
+      <td><span class="badge bg-{% if t.status == 'APPROVED' %}success{% elif t.status == 'REJECTED' %}danger{% else %}warning{% endif %}">{{ t.get_status_display }}</span></td>
+      {% if is_staff %}
+      <td class="text-end">
+        {% if t.status == 'PENDING' %}
+        <form method="post" action="{% url 'scheduler:timeoff_approve' t.pk %}" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-success">✓</button></form>
+        <form method="post" action="{% url 'scheduler:timeoff_reject' t.pk %}" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-danger">✗</button></form>
+        {% endif %}
+      </td>
+      {% endif %}
+    </tr>
+    {% empty %}<tr><td colspan="6" class="text-muted">Нет заявок</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% include "scheduler/_pagination.html" %}
+{% endblock %}
