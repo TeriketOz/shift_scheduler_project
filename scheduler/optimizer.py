@@ -75,7 +75,8 @@ W4_NIGHT_FAIR = 2      # штраф за неравномерность ночн
 W5_WEEKEND_OFF = 8   # штраф за работу в выходные для тех, кто их предпочитает
 
 # --- Прочие параметры ---
-DESIRED_WEEKLY_HOURS = 36      # желаемая нагрузка (выше — overtime)
+DESIRED_WEEKLY_HOURS = 36      # желаемая нагрузка (выше — overtime в модели, S1)
+TK_WEEKLY_NORM_HOURS = 40      # норма по ст. 91/152 ТК РФ (выше — сверхурочные)
 MIN_REST_MINUTES = 12 * 60     # минимальный отдых между сменами
 SOLVER_TIME_LIMIT_SECONDS = 60
 
@@ -425,12 +426,22 @@ class ScheduleOptimizer:
         )
         coverage_percent = round(100 * covered / len(self.shifts), 1) if self.shifts else 0.0
 
-        # Часы по сотрудникам
+        # Часы по сотрудникам (всего за период) — для метрики справедливости
         hours_per_emp = {eid: 0.0 for eid in emp_ids}
+        # Часы по сотрудникам и неделям — для корректного расчёта переработки
+        hours_per_emp_week: dict[tuple[int, tuple[int, int]], float] = {}
         for (i_id, j_id) in assignments:
-            hours_per_emp[i_id] += shift_by_id[j_id].duration_hours()
+            shift = shift_by_id[j_id]
+            dur = shift.duration_hours()
+            hours_per_emp[i_id] += dur
+            wk = self._iso_week(shift.date)
+            hours_per_emp_week[(i_id, wk)] = hours_per_emp_week.get((i_id, wk), 0.0) + dur
 
-        total_overtime = sum(max(0, h - DESIRED_WEEKLY_HOURS) for h in hours_per_emp.values())
+        # Переработка считается ПОНЕДЕЛЬНО относительно нормы ТК РФ (40 ч/нед, ст. 152):
+        # суммируются часы, отработанные сверх 40 в каждой отдельной неделе.
+        total_overtime = sum(
+            max(0.0, h - TK_WEEKLY_NORM_HOURS) for h in hours_per_emp_week.values()
+        )
         if hours_per_emp:
             fairness = round(max(hours_per_emp.values()) - min(hours_per_emp.values()), 1)
         else:

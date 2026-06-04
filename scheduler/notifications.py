@@ -1,7 +1,7 @@
 """
-Система внутренних уведомлений с дублированием на email.
-Внутренние уведомления хранятся в модели Notification, email отправляется
-через django.core.mail.send_mail. Сбои SMTP не ломают основную операцию.
+Система внутренних уведомлений.
+Уведомления хранятся в модели Notification и отображаются в веб-интерфейсе
+(индикатор-колокольчик с числом непрочитанных).
 """
 import logging
 
@@ -10,9 +10,10 @@ from .models import Notification
 logger = logging.getLogger(__name__)
 
 
-def notify(user, title: str, message: str, send_email: bool = False) -> Notification:
-    """Создать внутреннее уведомление. Email отключён в текущей конфигурации."""
+def notify(user, title: str, message: str) -> Notification:
+    """Создать внутреннее уведомление (запись в БД). Внешние каналы не используются."""
     return Notification.objects.create(user=user, title=title, message=message)
+
 
 def notify_shift_assigned(employee, shift) -> None:
     """Сообщить сотруднику о новом назначении на смену."""
